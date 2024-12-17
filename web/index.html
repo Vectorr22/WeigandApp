@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Tarjetas RFID</title>
+    <style>
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        table th,
+        table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        table th {
+            background-color: #02d826;
+            color: white;
+        }
+
+        table tbody tr:nth-child(odd) {
+            background-color: #f2f2f2;
+        }
+
+        table tbody tr:hover {
+            background-color: #ddd;
+        }
+
+        .button {
+            padding: 5px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .button-desactivar {
+            background-color: #f0ad4e;
+            color: white;
+        }
+
+        .button-eliminar {
+            background-color: #d9534f;
+            color: white;
+        }
+
+        .button-activar {
+            background-color: #5cb85c;
+            color: white;
+        }
+
+        .acciones {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .button-alta {
+            background-color: #0275d8;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        .log-container {
+            margin-top: 40px;
+            max-height: 300px;
+            /* Altura máxima del contenedor */
+            overflow-y: auto;
+            /* Habilitar desplazamiento vertical */
+        }
+
+        .filter-input {
+            display: block;
+            margin: 20px auto;
+            padding: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Gestión de Tarjetas RFID</h1>
+    </header>
+    <div class="container">
+        <h2>Listado de Tarjetas</h2>
+        <table id="tarjetasTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Código de Tarjeta</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Las filas se llenarán dinámicamente -->
+            </tbody>
+        </table>
+        <button class="button-alta" onclick="window.location.href='alta.html'">Registrar Nueva Tarjeta</button>
+    </div>
+    
+    <div class="container log-container">
+        <h2>Log de Respuestas de Tarjetas</h2>
+        <table id="logTable">
+            <thead>
+                <tr>
+                    <th>ID Respuesta</th>
+                    <th>Código de Tarjeta</th>
+                    <th>Aceptado</th>
+                    <th>Fecha y Hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Las filas se llenarán dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+    
+
+    <script>
+        // Función para cargar tarjetas desde el servidor
+        function cargarTarjetas() {
+            fetch('/api.php?accion=listar')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    const tableBody = document.querySelector('#tarjetasTable tbody');
+                    tableBody.innerHTML = ''; // Limpiar tabla
+                    data.forEach(tarjeta => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${tarjeta.id}</td>
+                            <td>${tarjeta.codigo}</td>
+                            <td>${tarjeta.activado}</td>
+                            <td class="acciones">
+                                <button class="button button-activar" onclick="activarTarjeta(${tarjeta.id})">Activar</button>
+                                <button class="button button-desactivar" onclick="desactivarTarjeta(${tarjeta.id})">Desactivar</button>
+                                <button class="button button-eliminar" onclick="eliminarTarjeta(${tarjeta.id})">Eliminar</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error al cargar tarjetas:', error));
+        }
+
+        // Función para activar tarjeta
+        function activarTarjeta(id) {
+            fetch(`/api.php?accion=activar&id=${id}`, {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Tarjeta activada:', data);
+                    cargarTarjetas(); // Recargar la lista de tarjetas
+                })
+                .catch(error => console.error('Error al activar tarjeta:', error));
+        }
+
+        // Función para desactivar tarjeta
+        function desactivarTarjeta(id) {
+            fetch(`/api.php?accion=desactivar&id=${id}`, {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Tarjeta desactivada:', data);
+                    cargarTarjetas(); // Recargar la lista de tarjetas
+                })
+                .catch(error => console.error('Error al desactivar tarjeta:', error));
+        }
+
+        // Función para eliminar tarjeta
+        function eliminarTarjeta(id) {
+            fetch(`/api.php?accion=eliminar&id=${id}`, {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Tarjeta eliminada:', data);
+                    cargarTarjetas(); // Recargar la lista de tarjetas
+                })
+                .catch(error => console.error('Error al eliminar tarjeta:', error));
+        }
+
+        // Función para cargar log de respuestas de tarjetas
+        function cargarLogRespuestas() {
+            fetch('/api.php?accion=listar_respuestas')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('#logTable tbody');
+                    tableBody.innerHTML = ''; // Limpiar tabla
+                    data.forEach(respuesta => {
+                        console.log(respuesta);
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${respuesta.id}</td>
+                            <td>${respuesta.codigo_tarjeta}</td>
+                            <td>${respuesta.aceptado}</td>
+                            <td>${respuesta.fecha_hora}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error al cargar log de respuestas:', error));
+        }
+
+
+
+        // Cargar las tarjetas y el log de respuestas al iniciar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarTarjetas();
+            cargarLogRespuestas();
+        });
+
+        // Llamar a cargarTarjetas y cargarLogRespuestas cada 5 segundos
+        setInterval(cargarTarjetas, 5000);
+        setInterval(cargarLogRespuestas, 5000);
+    </script>
+</body>
+
+</html>
